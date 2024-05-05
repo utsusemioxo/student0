@@ -37,8 +37,12 @@ int init_words(WordCount **wclist) {
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
-  *wclist = NULL;
-  return 0;
+  if (wclist == NULL) {
+    return 1;
+  } else {
+    *wclist = NULL;
+    return 0;
+  }
 }
 
 ssize_t len_words(WordCount *wchead) {
@@ -47,12 +51,31 @@ ssize_t len_words(WordCount *wchead) {
      this function.
   */
     size_t len = 0;
+    if (wchead == NULL)
+      return 0;
+
+    WordCount *wc;
+    for (wc = wchead; wc; wc = wc->next) {
+      if (wc->word == NULL || wc->count <= 0) {
+        // invalid WordCount Node in List.
+        return -1;
+      }
+
+      len++;
+      
+    }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   WordCount *wc = NULL;
+  if (word == NULL || wchead == NULL) 
+    return NULL;
+  for (wc = wchead; wc; wc = wc->next) {
+    if (0 == strcmp(word, wc->word))
+      return wc;
+  }
   return wc;
 }
 
@@ -61,7 +84,28 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
- return 0;
+  if (wclist == NULL || word == NULL)
+    return 1;
+  
+  WordCount *wc = NULL;
+  WordCount **my_wclist = wclist;
+  for (wc = *my_wclist; wc; wc = wc->next) {
+    if (0 == strcmp(wc->word, word)) {
+      wc->count++;
+      return 0;
+    }
+  }
+
+  WordCount *new_wc = (WordCount *)malloc(sizeof(WordCount));
+  if (new_wc == NULL)
+    return 1;
+  wc = new_wc;
+  wc->word = new_string(word);
+  if (wc->word == NULL) {
+    return 1;
+  }
+  wc->count = 1;
+  return 0;
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {

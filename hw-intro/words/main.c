@@ -36,7 +36,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 WordCount *word_counts = NULL;
 
 /* The maximum length of each word in a file */
-#define MAX_WORD_LEN 64
+#define MAX_WORD_LEN 4
+
+#define MAX_WORD_TOTAL_LENGTH 4096
 
 /*
  * 3.1.1 Total Word Count
@@ -129,20 +131,65 @@ int main (int argc, char *argv[]) {
 
   /* Create the empty data structure */
   init_words(&word_counts);
+  
+  char str_read[4096] = {0};
+  const char* delim = " ";
+  char* token = NULL;
 
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
+    fgets(str_read, 4096, infile);
+    token = strtok(str_read, delim);
+    
+    do {
+      if(strlen(token) > MAX_WORD_LEN+1) {
+        printf("Error!!! The word %s is longer than maximum word length.",
+              token);
+        return 1;
+      } 
+
+      add_word(&word_counts, token);
+      total_words++;
+
+      token = strtok(NULL, delim);
+    } while (token != NULL);
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
+    for (int i = optind; i < argc; i++) {
+      infile = fopen(argv[i], "r");
+      if (infile != NULL) {
+        while (fgets(str_read, 4096, infile)) {
+
+          token = strtok(str_read, delim);
+          
+          do {
+            if(strlen(token) > MAX_WORD_LEN+1) {
+              printf("Error!!! The word %s is longer than maximum word length.",
+                    token);
+              return 1;
+            } 
+
+            add_word(&word_counts, token);
+            total_words++;
+            token = strtok(NULL, delim);
+          } while (token != NULL);
+        }
+
+      } else {
+        printf("Error!!! The open file %s failed", argv[i]);
+        return 0;
+      }
+      fclose(infile);
+    }
   }
 
   if (count_mode) {
     printf("The total number of words is: %i\n", total_words);
   } else {
-    wordcount_sort(&word_counts, wordcount_less);
+    // wordcount_sort(&word_counts, wordcount_less);
 
     printf("The frequencies of each word are: \n");
     fprint_words(word_counts, stdout);
